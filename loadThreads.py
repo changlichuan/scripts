@@ -36,13 +36,17 @@ ERROR_USER_ID = 'User id is required, exiting...'
 FIELD_THREAD='messages'
 FIELD_THREAD_DATA = 'data'
 FIELD_THREAD_ID = 'id'
+FIELD_THREAD_PART = 'participants'
+FIELD_THREAD_TIME = 'updated_time'
 
 FIELD_MESSAGE_ID = 'id'
 FIELD_MESSAGE_TIME = 'created_time'
 FIELD_MESSAGE_SENDER = 'from' 
 FIELD_MESSAGE_SENDER_NAME = 'name'
 FIELD_MESSAGE_SENDER_EMAIL = 'email'
+FIELD_MESSAGE_SENDER_ID = 'id'
 
+TIME_FORMAT =  '%Y-%m-%dT%H:%M:%S+%f'
 
 #file constants
 FILE_WRITE_PERMISSION = 'wb'
@@ -79,12 +83,12 @@ def exportThreadsID(access_token,user_id,threadsCol,filter_by_since=True) :
 
 	for thread in threads :
 		#thread_time = datetime.datetime.strptime(thread['updated_time'], '%Y-%m-%dT%I:%M:%S+%f');
-		if thread['id'] in threadsCol :
-			threadsCol[thread['id']]['participants'].add(user_id);
+		if thread[FIELD_THREAD_ID] in threadsCol :
+			threadsCol[thread[FIELD_THREAD_ID]][FIELD_THREAD_PART].add(user_id);
 		else : 
-			thread_time = datetime.datetime.strptime(thread['updated_time'], '%Y-%m-%dT%H:%M:%S+%f');
+			thread_time = datetime.datetime.strptime(thread[FIELD_THREAD_TIME], TIME_FORMAT);
 			if (not filter_by_since) or (thread_time>SINCE) :
-				threadsCol[thread['id']] = {'updated_time':thread['updated_time'],'participants':{user_id}};
+				threadsCol[thread[FIELD_THREAD_ID]] = {FIELD_THREAD_TIME:thread[FIELD_THREAD_TIME],FIELD_THREAD_PART:{user_id}};
 	return threadsCol;
 
 def exportMembersID(access_token) :
@@ -105,7 +109,7 @@ if __name__ == '__main__':
 	#extract active members
 
 	members = exportMembersID(access_token);
-	with open('members.csv', 'w') as outfile:
+	with open('members.csv', FILE_WRITE_PERMISSION) as outfile:
 		json.dump(members, outfile)
 	print('--------- '+str(len(members))+' Members extracted by : '+str(datetime.datetime.now()) +'---------');
 
@@ -113,7 +117,7 @@ if __name__ == '__main__':
 	#extract threads with at least one active member
 	threads={};
 	for member in members :
-		threads = exportThreadsID(access_token,member['id'],threads);
+		threads = exportThreadsID(access_token,member[FIELD_MESSAGE_SENDER_ID],threads);
 
 	print('--------- '+str(len(threads))+' Threads extracted by : '+str(datetime.datetime.now()) +'---------');
 
@@ -121,11 +125,12 @@ if __name__ == '__main__':
 
 	for thread in threads :
 		print(thread + ' : ' + str(threads[thread]));
-		user_id = threads[thread]['participants'].pop();threads[thread]['participants'].add(user_id);
+		user_id = threads[thread][FIELD_THREAD_PART].pop();
+		threads[thread][FIELD_THREAD_PART].add(user_id);
 		messages = exportMessagesByThread(access_token,thread,user_id)
 		for msg in messages:
-			if 'email' in msg['from'] :
-				print(thread + ': '+msg['created_time']+'  from:'+msg['from']['email']);
+			if FIELD_MESSAGE_SENDER_EMAIL in msg[FIELD_MESSAGE_SENDER] :
+				print(thread + ': '+msg[FIELD_MESSAGE_TIME]+'  from:'+msg[FIELD_MESSAGE_SENDER][FIELD_MESSAGE_SENDER_EMAIL]);
 		print('-------------------------------------------');
 
 	print('---------  messages extracted by : '+str(datetime.datetime.now()) +'---------');

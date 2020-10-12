@@ -20,7 +20,6 @@ EMPTY_RESPONSE = ''
 
 
 # property constants
-
 FIELD_NAME = 'name'
 FIELD_MESSAGE = 'message'
 FIELD_ID = 'id'
@@ -28,6 +27,8 @@ FIELD_DATA = 'data'
 FIELD_PAGING = 'paging'
 FIELD_NEXT = 'next'
 FIELD_EMAIL = 'email'
+FIELD_MESSAGE_TIME = 'created_time'
+TIME_FORMAT =  '%Y-%m-%dT%H:%M:%S+%f'
 
 
 
@@ -74,7 +75,7 @@ def getHeaders(access_token):
 def getMessagesByThreads(graphurl,access_token,threadid,userid,since,fields=None, filters=None):
 	if fields : fields = PARA_AND+FIELDS_FILTER+fields
 	url = graphurl+str(threadid)+HTTP_DELIM+MESSAGE_RESOURCE_SUFFIX+PARA_DELIM+USER_FILTER+str(userid)+fields+filters;
-	return getPagedDataWithFilter(access_token,url,[],'created_time',since);
+	return getPagedDataWithFilter(access_token,url,[],FIELD_MESSAGE_TIME,since);
 		
 
 def getThreads(graphurl, access_token, userid, fields=None, filters=None):
@@ -107,7 +108,7 @@ def getPagedDataWithFilter(access_token, endpoint, data,filter_field,filter_valu
 	json_keys = result_json.keys()
 	if FIELD_DATA in json_keys and len(result_json[FIELD_DATA]):
 		for item in result_json[FIELD_DATA] :
-			filter_date = datetime.datetime.strptime(item[filter_field], '%Y-%m-%dT%H:%M:%S+%f')
+			filter_date = datetime.datetime.strptime(item[filter_field],TIME_FORMAT)
 			if filter_date>filter_value : data.extend([item]);
 			else : return data
 

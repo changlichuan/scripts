@@ -1,0 +1,5 @@
+.env
+logs/
+*.csv
+__pycache__/
+Insight_agent.py
