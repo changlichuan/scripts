@@ -13,6 +13,8 @@ import time
 import datetime
 import os
 import json
+import logging
+import getopt
 from dotenv import load_dotenv
 
 
@@ -30,7 +32,6 @@ USER_ID_INPUT_PROMPT = 'user id?'
 #error messages
 ERROR_MISSING_ACCESS_TOKEN = 'Access token is required, exiting...'
 ERROR_USER_ID = 'User id is required, exiting...'
-
 
 #other constants
 FIELD_THREAD='messages'
@@ -93,25 +94,33 @@ def exportThreadsID(access_token,user_id,threadsCol,filter_by_since=True) :
 	return threadsCol;
 
 def exportMembersID(access_token) :
-	members = graph_sdk.getMembers(GRAPH_URL,access_token,'?fields=id,email,name','&limit='+str(LIMIT));
+	members = graph_sdk.getMembers(GRAPH_URL,access_token,'?fields=id,email,name,department,division,organization,title','&limit='+str(LIMIT));
 	return members;
 
 
 
 if __name__ == '__main__':
+
+	log_level = logging.ERROR;
+	options, args = getopt.getopt(sys.argv[1:], "", ['info','debug'])
+	for opt, arg in options:
+		if opt in ('--info','--debug') : log_level = logging.INFO;
+	logging.basicConfig(level=log_level)
+
+
+
 	if not access_token :
 		access_token = input(ACCESS_TOKEN_INPUT_PROMPT);
 		if not access_token:
 			print(ERROR_MISSING_ACCESS_TOKEN)
 
 	print('Extracting conversations since :' + str(SINCE));
-	print('--------- Starting at : '+str(datetime.datetime.now()) +'---------');
+	logging.info('--------- Starting at : '+str(datetime.datetime.now()) +'---------');
 
 	#extract active members
 
 	members = exportMembersID(access_token);
-	# with open('members.csv', FILE_WRITE_PERMISSION) as outfile:
-	# 	json.dump(members, outfile)
+
 	print('--------- '+str(len(members))+' Members extracted by : '+str(datetime.datetime.now()) +'---------');
 
 
@@ -125,13 +134,13 @@ if __name__ == '__main__':
 	#extract messages within each chat 
 
 	for thread in threads :
-		print(thread + ' : ' + (thread[FIELD_THREAD_NAME] if FIELD_THREAD_NAME in thread else '') + str(threads[thread]));
+		logging.info(thread + ' : ' + (thread[FIELD_THREAD_NAME] if FIELD_THREAD_NAME in thread else '') + str(threads[thread]));
 		user_id = threads[thread][FIELD_THREAD_PART].pop();
 		threads[thread][FIELD_THREAD_PART].add(user_id);
 		messages = exportMessagesByThread(access_token,thread,user_id)
 		for msg in messages:
-			print(thread + ': '+msg[FIELD_MESSAGE_TIME]+'  from:'+ (msg[FIELD_MESSAGE_SENDER][FIELD_MESSAGE_SENDER_EMAIL] if FIELD_MESSAGE_SENDER_EMAIL in msg[FIELD_MESSAGE_SENDER] else msg[FIELD_MESSAGE_SENDER][FIELD_MESSAGE_SENDER_NAME]));
-		print('-------------------------------------------');
+			logging.info(thread + ': '+msg[FIELD_MESSAGE_TIME]+'  from:'+ (msg[FIELD_MESSAGE_SENDER][FIELD_MESSAGE_SENDER_EMAIL] if FIELD_MESSAGE_SENDER_EMAIL in msg[FIELD_MESSAGE_SENDER] else msg[FIELD_MESSAGE_SENDER][FIELD_MESSAGE_SENDER_NAME]));
+		logging.info('-------------------------------------------');
 
 	print('---------  messages extracted by : '+str(datetime.datetime.now()) +'---------');
 
