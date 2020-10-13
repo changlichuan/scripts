@@ -38,6 +38,7 @@ FIELD_THREAD_DATA = 'data'
 FIELD_THREAD_ID = 'id'
 FIELD_THREAD_PART = 'participants'
 FIELD_THREAD_TIME = 'updated_time'
+FIELD_THREAD_NAME = 'name'
 
 FIELD_MESSAGE_ID = 'id'
 FIELD_MESSAGE_TIME = 'created_time'
@@ -109,8 +110,8 @@ if __name__ == '__main__':
 	#extract active members
 
 	members = exportMembersID(access_token);
-	with open('members.csv', FILE_WRITE_PERMISSION) as outfile:
-		json.dump(members, outfile)
+	# with open('members.csv', FILE_WRITE_PERMISSION) as outfile:
+	# 	json.dump(members, outfile)
 	print('--------- '+str(len(members))+' Members extracted by : '+str(datetime.datetime.now()) +'---------');
 
 
@@ -124,13 +125,12 @@ if __name__ == '__main__':
 	#extract messages within each chat 
 
 	for thread in threads :
-		print(thread + ' : ' + str(threads[thread]));
+		print(thread + ' : ' + (thread[FIELD_THREAD_NAME] if FIELD_THREAD_NAME in thread else '') + str(threads[thread]));
 		user_id = threads[thread][FIELD_THREAD_PART].pop();
 		threads[thread][FIELD_THREAD_PART].add(user_id);
 		messages = exportMessagesByThread(access_token,thread,user_id)
 		for msg in messages:
-			if FIELD_MESSAGE_SENDER_EMAIL in msg[FIELD_MESSAGE_SENDER] :
-				print(thread + ': '+msg[FIELD_MESSAGE_TIME]+'  from:'+msg[FIELD_MESSAGE_SENDER][FIELD_MESSAGE_SENDER_EMAIL]);
+			print(thread + ': '+msg[FIELD_MESSAGE_TIME]+'  from:'+ (msg[FIELD_MESSAGE_SENDER][FIELD_MESSAGE_SENDER_EMAIL] if FIELD_MESSAGE_SENDER_EMAIL in msg[FIELD_MESSAGE_SENDER] else msg[FIELD_MESSAGE_SENDER][FIELD_MESSAGE_SENDER_NAME]));
 		print('-------------------------------------------');
 
 	print('---------  messages extracted by : '+str(datetime.datetime.now()) +'---------');
